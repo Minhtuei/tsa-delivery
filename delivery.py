@@ -13,7 +13,7 @@ class CreateDeliveriesTest:
         self.orders = []
         self.grouped_order_by_dormitory = {}
         self.grouped_order_by_timeslot = {}
-        self.grouped_order_by_weight = {}
+        self.grouped_orders_by_weight = {}
         self.sorted_orders_by_TSP = {}
         self.time_slots =  [{
                 "start": f'{i}:00',
@@ -165,16 +165,16 @@ class CreateDeliveriesTest:
                     # solver = BinPackingSolver(orders, self.max_weight)
                     # trips = solver.solve_by_BFD()
                     trips,_ = BinPackingSolver(orders, self.max_weight,2).solve_by_BFD_with_shippers()
-                    self.grouped_order_by_weight.setdefault(dormitory, {}).setdefault(date_slots, {}).setdefault(time_slots, []).extend(trips)
+                    self.grouped_orders_by_weight.setdefault(dormitory, {}).setdefault(date_slots, {}).setdefault(time_slots, []).extend(trips)
         print('Orders grouped by weight successfully!')
         print(f'Time elapsed for Bin Packing: {time.time() - start_time}')
         with open('grouped_orders_by_weight.json', 'w') as f:
-            json.dump(self.grouped_order_by_weight, f, indent=4)
+            json.dump(self.grouped_orders_by_weight, f, indent=4)
 
 
     def sort_orders_by_TSP(self):
         start_time = time.time()
-        for dormitory, dates in self.grouped_order_by_weight.items():
+        for dormitory, dates in self.grouped_orders_by_weight.items():
             for date, time_slots_dict in dates.items():
                 for time_slots, trips in time_slots_dict.items():
                     for trip in trips:
@@ -195,12 +195,16 @@ class CreateDeliveriesTest:
 
 
 class CreateDeliveries:
-    def __init__(self, new_orders=False, max_weight=10.0):
-        self.orders = []
-        self.grouped_order_by_weight = {}
-        self.sorted_orders_by_TSP = {}
+    def __init__(self, orders,dormitory, max_weight=20.0, num_of_shippers=1):
+        self.orders = orders
+        self.dormitory = dormitory
         self.max_weight = max_weight
+        self.num_of_shippers = num_of_shippers
+
+        self.grouped_orders_by_weight = {}
+        self.sorted_orders_by_TSP = []
         self.map_box_distance = {}
+
         self.group_by_weight()
         self.sort_orders_by_TSP()
 
@@ -223,13 +227,10 @@ class CreateDeliveries:
 
     def group_by_weight(self):
         start_time = time.time()
-        for dormitory, dates in self.grouped_order_by_timeslot.items():
-            for date_slots, time_slots in dates.items():
-                for time_slots, orders in time_slots.items():
-                    # solver = BinPackingSolver(orders, self.max_weight)
-                    # trips = solver.solve_by_BFD()
-                    trips,_ = BinPackingSolver(orders, self.max_weight,2).solve_by_BFD_with_shippers()
-                    self.grouped_order_by_weight.setdefault(dormitory, {}).setdefault(date_slots, {}).setdefault(time_slots, []).extend(trips)
+        # Print orders as dictionaries
+        trips,_ = BinPackingSolver(self.orders, self.max_weight,self.num_of_shippers).solve_by_BFD_with_shippers()
+        filtered_trips = [trip for trip in trips if trip]
+        self.grouped_orders_by_weight = filtered_trips
         print('Orders grouped by weight successfully!')
         print(f'Time elapsed for Bin Packing: {time.time() - start_time}')
         
@@ -237,14 +238,15 @@ class CreateDeliveries:
 
     def sort_orders_by_TSP(self):
         start_time = time.time()
-        for dormitory, dates in self.grouped_order_by_weight.items():
-            for date, time_slots_dict in dates.items():
-                for time_slots, trips in time_slots_dict.items():
-                    for trip in trips:
-                        solver = TSPSolver(trip, self.get_start_location(dormitory), self.map_box_distance)
-                        sorted_trip, _ = solver.get_sorted_orders_by_TSP()
-                        self.sorted_orders_by_TSP.setdefault(dormitory, {}).setdefault(date, {}).setdefault(time_slots, []).append(sorted_trip)
+        for trip in self.grouped_orders_by_weight:
+            solver = TSPSolver(trip, self.get_start_location(self.dormitory), self.map_box_distance)
+            sorted_trip, _ = solver.get_sorted_orders_by_TSP()
+            print(sorted_trip)
+            self.sorted_orders_by_TSP.append(sorted_trip)
 
         print('Orders sorted by TSP successfully!')
         print(f'Time elapsed for TSP: {time.time() - start_time}')
+
+    def get_delivery(self):
+        return self.sorted_orders_by_TSP
         
