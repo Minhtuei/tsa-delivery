@@ -1,6 +1,7 @@
 from enum import Enum
 
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from db import DB
@@ -65,3 +66,12 @@ class App:
 # Khởi tạo app FastAPI
 app_instance = App()
 app = app_instance.app
+
+allow_all = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_all,
+    allow_credentials=True,
+    allow_methods=allow_all,
+    allow_headers=allow_all,
+)
