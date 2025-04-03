@@ -1,3 +1,4 @@
+import time
 from enum import Enum
 
 from fastapi import FastAPI, Query
@@ -62,7 +63,20 @@ class App:
                     },
                 )
 
+        @self.app.get("/")
+        def root():
+            return {"message": "Welcome to TSA-DELIVERY API!"}
 
+        @self.app.get("/health-check")
+        def health_check():
+            uptime = time.time() - START_TIME  # Calculate uptime in seconds
+            return {
+                "status": "ok",
+                "uptime_seconds": round(uptime, 2),  # Round for readability
+            }
+
+
+START_TIME = time.time()
 # Khởi tạo app FastAPI
 app_instance = App()
 app = app_instance.app
