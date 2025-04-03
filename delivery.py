@@ -202,6 +202,7 @@ class CreateDeliveries:
         self.num_of_shippers = num_of_shippers
 
         self.grouped_orders_by_weight = {}
+        self.delay_orders = {}
         self.sorted_orders_by_TSP = []
         self.map_box_distance = {}
 
@@ -214,23 +215,20 @@ class CreateDeliveries:
             'building': 'A7',
             'room': '000',
             'weight': 0.0,
-            'order_id': 0
         } if dormitory == 'A' else {
             'building': 'BD4',
             'room': '000',
             'weight': 0.0,
-            'order_id': 0
         }
 
     
-    
-
     def group_by_weight(self):
         start_time = time.time()
         # Print orders as dictionaries
-        trips,_ = BinPackingSolver(self.orders, self.max_weight,self.num_of_shippers).solve_by_BFD_with_shippers()
+        trips, delay_orders = BinPackingSolver(self.orders, self.max_weight,self.num_of_shippers).solve_by_BFD_with_shippers()
         filtered_trips = [trip for trip in trips if trip]
         self.grouped_orders_by_weight = filtered_trips
+        self.delay_orders = delay_orders
         print('Orders grouped by weight successfully!')
         print(f'Time elapsed for Bin Packing: {time.time() - start_time}')
         
@@ -248,5 +246,5 @@ class CreateDeliveries:
         print(f'Time elapsed for TSP: {time.time() - start_time}')
 
     def get_delivery(self):
-        return self.sorted_orders_by_TSP
+        return self.sorted_orders_by_TSP, self.delay_orders
         

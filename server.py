@@ -7,6 +7,7 @@ from db import DB
 from order import Order
 from enum import Enum
 from delivery import CreateDeliveries
+from staff import Staff
 # Enum to restrict dormitory to "A" or "B"
 class Dormitory(str, Enum):
     A = "A"
@@ -34,10 +35,22 @@ class App:
                     )
                 # Convert orders to a list of dictionaries
                 orders_dict = [order.__dict__ for order in orders]
-                deliveries = CreateDeliveries(orders=orders_dict, dormitory = dormitory).get_delivery()
-                return {"deliveries": deliveries}
+
+                #Get num of available shipper
+                num_of_shippers = Staff.get_total_available_staff(self.db)
+
+                deliveries,delay_orders = CreateDeliveries(orders=orders_dict, dormitory = dormitory,num_of_shippers=num_of_shippers).get_delivery()
+                return {"deliveries": deliveries, "delayed":delay_orders}
             except Exception as e:
-                raise HTTPException(status_code=500, detail=str(e))
+                print(str(e))
+
+                return JSONResponse(
+                        status_code=500,
+                        content={
+                            "code": "INTERNAL_SERVER_ERROR",
+                            "message": "Hệ thống đang gặp sự cố. Vui lòng thử lại sau!"
+                        }
+                    )
 
 # Khởi tạo app FastAPI
 app_instance = App()

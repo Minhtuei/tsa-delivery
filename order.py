@@ -2,14 +2,14 @@ from typing import List
 
 class Order:
 
-    def __init__(self, order_id, shipping_fee, student_id, check_code, weight, building, delivery_date, dormitory, phone, product, room, brand):
-        self.order_id = order_id
-        self.shipping_fee = shipping_fee
-        self.student_id = student_id
-        self.check_code = check_code
+    def __init__(self, id, shippingFee, studentId, checkCode, weight, building, deliveryDate, dormitory, phone, product, room, brand):
+        self.id = id
+        self.shippingFee = shippingFee
+        self.studentId = studentId
+        self.checkCode = checkCode
         self.weight = weight
         self.building = building
-        self.delivery_date = delivery_date
+        self.deliveryDate = deliveryDate
         self.dormitory = dormitory
         self.phone = phone
         self.product = product
@@ -20,13 +20,13 @@ class Order:
     def from_db_row(cls, row):
         # Map dữ liệu từ DB row vào đối tượng Order
         return cls(
-            order_id=row[0],
-            shipping_fee=row[1],
-            student_id=row[2],
-            check_code=row[3],
+            id=row[0],
+            shippingFee=row[1],
+            studentId=row[2],
+            checkCode=row[3],
             weight=row[4],
             building=row[8],
-            delivery_date=row[9],
+            deliveryDate=row[9],
             dormitory=row[10],
             phone=row[11],
             product=row[12],
