@@ -1,32 +1,35 @@
-import psycopg2
+from sqlmodel import Session, SQLModel, create_engine
 
 from config import settings
 
 
 class DB:
-    _instance = None  # Biến lớp để lưu đối tượng singleton
+    _instance = None
+    _engine = None
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super().__new__(cls)  # Tạo instance mới nếu chưa có
+            cls._instance = super().__new__(cls)
+            cls._instance._init_engine()
         return cls._instance
 
-    def __init__(self):
-        if not hasattr(self, "db_config"):
-            # Chỉ thiết lập khi instance chưa được tạo (đảm bảo chỉ chạy 1 lần)
-            self.db_config = {
-                "host": settings.DB_HOST,
-                "dbname": settings.DB_NAME,
-                "user": settings.DB_USER,
-                "password": settings.DB_PASSWORD,
-                "port": settings.DB_PORT,
-            }
+    def _init_engine(self):
+        """Initialize the database engine only once."""
+        if not self._engine:
+            self._engine = create_engine(
+                str(settings.SQLALCHEMY_DATABASE_URI),
+                # echo=True,  # Logs SQL queries for debugging
+            )
 
-    def get_connection(self):
-        # Kết nối cơ sở dữ liệu
-        return psycopg2.connect(**self.db_config)
+    def get_session(self) -> Session:
+        """Creates a new session; caller must close it after use."""
+        return Session(self._engine)
 
-    def close_connection(self, conn, cur):
-        # Đóng kết nối và cursor
-        cur.close()
-        conn.close()
+    def init_db(self):
+        """Creates tables if they don't exist."""
+        SQLModel.metadata.create_all(self._engine)
+
+
+# Usage example:
+db = DB()
+db.init_db()  # Ensure tables exist

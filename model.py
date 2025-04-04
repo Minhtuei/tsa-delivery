@@ -3,19 +3,29 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
 
-class OrderType(BaseModel):
+class OrderSchema(BaseModel):
+    """Schema to serialize Order for API response"""
+
     id: str
-    shippingFee: float | None
-    studentId: str
+    studentId: Optional[str]
+    shippingFee: Optional[float]
+    deliveryDate: Optional[str]
+    isPaid: bool
+    room: Optional[str]
+    dormitory: Optional[str]
+    building: Optional[str]
     checkCode: str
-    weight: float
-    building: str
-    deliveryDate: str
-    dormitory: str
-    phone: str | None
-    product: str
-    room: str
-    brand: str
+    product: Optional[str]
+    weight: Optional[float]
+    shipperId: Optional[str]
+    phone: Optional[str]
+    latestStatus: Optional[str]
+    brand: Optional[str]
+    remainingAmount: Optional[float]
+    finishedImage: Optional[str]
+
+    class Config:
+        from_attributes = True  # Enables ORM serialization
 
 
 class GroupOrdersRequest(BaseModel):
@@ -26,5 +36,5 @@ class GroupOrdersRequest(BaseModel):
 
 
 class GroupOrdersResponse(BaseModel):
-    deliveries: List[List[OrderType]]
-    delayed: List[OrderType]
+    deliveries: List[List[OrderSchema]]
+    delayed: List[OrderSchema]

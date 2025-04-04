@@ -1,66 +1,50 @@
-from typing import List
+# order.py
+from enum import Enum
+from typing import List, Optional
+
+from sqlmodel import Field, Session, SQLModel, select
 
 
-class Order:
-    def __init__(
-        self,
-        id,
-        shippingFee,
-        studentId,
-        checkCode,
-        weight,
-        building,
-        deliveryDate,
-        dormitory,
-        phone,
-        product,
-        room,
-        brand,
-    ):
-        self.id = id
-        self.shippingFee = shippingFee
-        self.studentId = studentId
-        self.checkCode = checkCode
-        self.weight = weight
-        self.building = building
-        self.deliveryDate = deliveryDate
-        self.dormitory = dormitory
-        self.phone = phone
-        self.product = product
-        self.room = room
-        self.brand = brand
+# Define Enum for OrderStatus
+class OrderStatus(str, Enum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
+    DELIVERED = "DELIVERED"
+    CANCELED = "CANCELED"
+    IN_TRANSPORT = "IN_TRANSPORT"
+
+
+# Define Order model
+class Order(SQLModel, table=True):
+    __tablename__ = "Order"
+
+    id: str = Field(primary_key=True, index=True)
+    studentId: Optional[str] = None
+    shippingFee: Optional[float] = None
+    deliveryDate: Optional[str] = None
+    isPaid: bool = Field(default=False)
+    room: Optional[str] = None
+    dormitory: Optional[str] = None
+    building: Optional[str] = None
+    checkCode: str
+    product: Optional[str] = None
+    weight: Optional[float] = None
+    shipperId: Optional[str] = None
+    phone: Optional[str] = None
+    latestStatus: Optional[OrderStatus] = None
+    brand: Optional[str] = None
+    remainingAmount: Optional[float] = None
+    finishedImage: Optional[str] = None
 
     @classmethod
-    def from_db_row(cls, row):
-        # Map dữ liệu từ DB row vào đối tượng Order
-        return cls(
-            id=row[0],
-            shippingFee=row[1],
-            studentId=row[2],
-            checkCode=row[3],
-            weight=row[4],
-            building=row[8],
-            deliveryDate=row[9],
-            dormitory=row[10],
-            phone=row[11],
-            product=row[12],
-            room=row[13],
-            brand=row[15],
-        )
-
-    @staticmethod
     def get_orders_by_delivery_date(
-        db, delivery_date: str, dormitory: str
+        cls, session: Session, timeslot: str, dormitory: str
     ) -> List["Order"]:
-        # Truy xuất đơn hàng từ DB
-        conn = db.get_connection()
-        cur = conn.cursor()
-        query = """SELECT * FROM "Order" WHERE "deliveryDate" = %s AND "latestStatus" = 'ACCEPTED' AND "dormitory" = %s"""
-        cur.execute(query, (delivery_date, dormitory))
-        rows = cur.fetchall()
-
-        orders = [Order.from_db_row(row) for row in rows]
-
-        db.close_connection(conn, cur)
-
-        return orders
+        """Retrieve orders by timeslot & dormitory, filtering only 'ACCEPTED' orders."""
+        statement = select(cls).where(
+            cls.deliveryDate == timeslot,
+            cls.dormitory == dormitory,
+            cls.latestStatus == OrderStatus.ACCEPTED,
+        )
+        return session.exec(statement).all()

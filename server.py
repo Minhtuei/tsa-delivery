@@ -1,10 +1,11 @@
 import time
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlmodel import Session
 
-from db import DB
+from db import db
 from delivery import CreateDeliveries
 from model import GroupOrdersRequest, GroupOrdersResponse
 from order import Order
@@ -14,20 +15,18 @@ from staff import Staff
 class App:
     def __init__(self):
         self.app = FastAPI()
-        self.db = DB()  # Sử dụng singleton DB
         self.setup_routes()
 
     def setup_routes(self):
         @self.app.post("/group-orders")
-        def group_orders(request: GroupOrdersRequest) -> GroupOrdersResponse:
+        def group_orders(
+            request: GroupOrdersRequest, session: Session = Depends(db.get_session)
+        ) -> GroupOrdersResponse:
             try:
-                # Xử lý API gom nhóm đơn hàng theo timeslot
+                # Fetch orders from DB
                 orders = Order.get_orders_by_delivery_date(
-                    self.db,
-                    request.timeslot,
-                    request.dormitory,
+                    session, request.timeslot, request.dormitory
                 )
-
                 if not orders:
                     return JSONResponse(
                         status_code=404,
@@ -54,7 +53,7 @@ class App:
                     # Get num of available shipper
                     create_deliveries_config[
                         "num_of_shippers"
-                    ] = Staff.get_total_available_staff(self.db)
+                    ] = Staff.get_total_available_staff(session)
 
                 deliveries, delay_orders = CreateDeliveries(
                     **create_deliveries_config
