@@ -1,22 +1,14 @@
 import time
-from typing import Literal, Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 
 from db import DB
 from delivery import CreateDeliveries
+from model import GroupOrdersRequest, GroupOrdersResponse
 from order import Order
 from staff import Staff
-
-
-class GroupOrdersRequest(BaseModel):
-    maxWeight: Optional[float]
-    dormitory: Literal["A", "B"]  # Only accept "A" or "B"
-    timeslot: str  # Unix timestamp
-    mode: Optional[Literal["free", "balanced"]]  # Sorting mode
 
 
 class App:
@@ -27,7 +19,7 @@ class App:
 
     def setup_routes(self):
         @self.app.post("/group-orders")
-        def group_orders(request: GroupOrdersRequest):
+        def group_orders(request: GroupOrdersRequest) -> GroupOrdersResponse:
             try:
                 # Xử lý API gom nhóm đơn hàng theo timeslot
                 orders = Order.get_orders_by_delivery_date(
