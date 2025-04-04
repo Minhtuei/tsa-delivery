@@ -1,20 +1,14 @@
 import time
-from enum import Enum
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from db import DB
 from delivery import CreateDeliveries
+from model import GroupOrdersRequest, GroupOrdersResponse
 from order import Order
 from staff import Staff
-
-
-# Enum to restrict dormitory to "A" or "B"
-class Dormitory(str, Enum):
-    A = "A"
-    B = "B"
 
 
 class App:
@@ -24,14 +18,16 @@ class App:
         self.setup_routes()
 
     def setup_routes(self):
-        @self.app.get("/group-orders")
-        def group_orders(
-            timeslot: str = Query(..., description="The delivery timeslot"),
-            dormitory: Dormitory = Query(..., description="The dormitory name"),
-        ):
+        @self.app.post("/group-orders")
+        def group_orders(request: GroupOrdersRequest) -> GroupOrdersResponse:
             try:
                 # Xử lý API gom nhóm đơn hàng theo timeslot
-                orders = Order.get_orders_by_delivery_date(self.db, timeslot, dormitory)
+                orders = Order.get_orders_by_delivery_date(
+                    self.db,
+                    request.timeslot,
+                    request.dormitory,
+                )
+
                 if not orders:
                     return JSONResponse(
                         status_code=404,
@@ -43,15 +39,28 @@ class App:
                 # Convert orders to a list of dictionaries
                 orders_dict = [order.__dict__ for order in orders]
 
-                # Get num of available shipper
-                num_of_shippers = Staff.get_total_available_staff(self.db)
+                # Handle optional data
+                default_max_weight = request.maxWeight or 20.0
+                default_mode = request.mode or "balanced"
+
+                create_deliveries_config = {
+                    "orders": orders_dict,
+                    "dormitory": request.dormitory,
+                    "max_weight": default_max_weight,
+                    "mode": default_mode,
+                }
+
+                if default_mode == "balanced":
+                    # Get num of available shipper
+                    create_deliveries_config[
+                        "num_of_shippers"
+                    ] = Staff.get_total_available_staff(self.db)
 
                 deliveries, delay_orders = CreateDeliveries(
-                    orders=orders_dict,
-                    dormitory=dormitory,
-                    num_of_shippers=num_of_shippers,
+                    **create_deliveries_config
                 ).get_delivery()
-                return {"deliveries": deliveries, "delayed": delay_orders}
+
+                return {"deliveries": deliveries, "delayed": delay_orders or []}
             except Exception as e:
                 print(str(e))
 

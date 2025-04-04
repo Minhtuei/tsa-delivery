@@ -49,7 +49,9 @@ class Order:
         )
 
     @staticmethod
-    def get_orders_by_delivery_date(db, delivery_date: str, dormitory) -> List["Order"]:
+    def get_orders_by_delivery_date(
+        db, delivery_date: str, dormitory: str
+    ) -> List["Order"]:
         # Truy xuất đơn hàng từ DB
         conn = db.get_connection()
         cur = conn.cursor()

@@ -1,9 +1,7 @@
 import psycopg2
-import os
-from dotenv import load_dotenv
 
-# Tải biến môi trường từ file .env
-load_dotenv()
+from config import settings
+
 
 class DB:
     _instance = None  # Biến lớp để lưu đối tượng singleton
@@ -14,14 +12,14 @@ class DB:
         return cls._instance
 
     def __init__(self):
-        if not hasattr(self, 'db_config'):
+        if not hasattr(self, "db_config"):
             # Chỉ thiết lập khi instance chưa được tạo (đảm bảo chỉ chạy 1 lần)
             self.db_config = {
-                "host": os.getenv("DB_HOST"),
-                "dbname": os.getenv("DB_NAME"),
-                "user": os.getenv("DB_USER"),
-                "password": os.getenv("DB_PASSWORD"),
-                "port": os.getenv("DB_PORT")
+                "host": settings.DB_HOST,
+                "dbname": settings.DB_NAME,
+                "user": settings.DB_USER,
+                "password": settings.DB_PASSWORD,
+                "port": settings.DB_PORT,
             }
 
     def get_connection(self):
