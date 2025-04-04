@@ -204,11 +204,14 @@ class CreateDeliveriesTest:
 
 
 class CreateDeliveries:
-    def __init__(self, orders, dormitory, max_weight=20.0, num_of_shippers=1):
+    def __init__(
+        self, orders, dormitory, max_weight=20.0, num_of_shippers=1, mode="balanced"
+    ):
         self.orders = orders
         self.dormitory = dormitory
         self.max_weight = max_weight
         self.num_of_shippers = num_of_shippers
+        self.mode = mode
 
         self.grouped_orders_by_weight = {}
         self.delay_orders = {}
@@ -236,12 +239,19 @@ class CreateDeliveries:
     def group_by_weight(self):
         start_time = time.time()
         # Print orders as dictionaries
-        trips, delay_orders = BinPackingSolver(
-            self.orders, self.max_weight, self.num_of_shippers
-        ).solve_by_BFD_with_shippers()
+        if self.mode == "balanced":
+            trips, delay_orders = BinPackingSolver(
+                self.orders, self.max_weight, self.num_of_shippers
+            ).solve_by_BFD_with_shippers()
+            self.delay_orders = delay_orders
+
+        else:
+            trips = BinPackingSolver(
+                self.orders, self.max_weight, self.num_of_shippers
+            ).solve_by_BFD()
+
         filtered_trips = [trip for trip in trips if trip]
         self.grouped_orders_by_weight = filtered_trips
-        self.delay_orders = delay_orders
         print("Orders grouped by weight successfully!")
         print(f"Time elapsed for Bin Packing: {time.time() - start_time}")
 
