@@ -7,7 +7,12 @@ from sqlmodel import Session
 
 from db import db
 from delivery import CreateDeliveries
-from model import GroupOrdersRequest, GroupOrdersResponse
+from model import (
+    GroupOrdersRequest,
+    GroupOrdersResponse,
+    SortOrderRequest,
+    SortOrderResponse,
+)
 from order import Order
 from staff import Staff
 
@@ -18,6 +23,18 @@ class App:
         self.setup_routes()
 
     def setup_routes(self):
+        @self.app.get("/")
+        def root():
+            return {"message": "Welcome to TSA-DELIVERY API!"}
+
+        @self.app.get("/health-check")
+        def health_check():
+            uptime = time.time() - START_TIME  # Calculate uptime in seconds
+            return {
+                "status": "ok",
+                "uptime_seconds": round(uptime, 2),  # Round for readability
+            }
+
         @self.app.post("/group-orders")
         def group_orders(
             request: GroupOrdersRequest, session: Session = Depends(db.get_session)
@@ -29,7 +46,7 @@ class App:
                 )
                 if not orders:
                     return JSONResponse(
-                        status_code=404,
+                        status_code=400,
                         content={
                             "code": "NO_ORDERS",
                             "message": "Không có đơn hàng nào trong timeslot này!",
@@ -59,7 +76,9 @@ class App:
                     **create_deliveries_config
                 ).get_delivery()
 
-                return {"deliveries": deliveries, "delayed": delay_orders or []}
+                return GroupOrdersResponse(
+                    deliveries=deliveries, delayed=delay_orders or []
+                )
             except Exception as e:
                 print(str(e))
 
@@ -71,17 +90,28 @@ class App:
                     },
                 )
 
-        @self.app.get("/")
-        def root():
-            return {"message": "Welcome to TSA-DELIVERY API!"}
+        @self.app.post("/route-orders")
+        def route_orders(request: SortOrderRequest) -> SortOrderResponse:
+            orders = [order.model_dump() for order in request.orders]
+            dormitories = set(order.dormitory for order in request.orders)
+            if len(dormitories) > 1:
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "code": "NOT_SAME_DORMITORY",
+                        "message": "Các đơn hàng của bạn phải cùng thuộc một KTX",
+                    },
+                )
 
-        @self.app.get("/health-check")
-        def health_check():
-            uptime = time.time() - START_TIME  # Calculate uptime in seconds
-            return {
-                "status": "ok",
-                "uptime_seconds": round(uptime, 2),  # Round for readability
-            }
+            deliveries, _ = CreateDeliveries(
+                orders=[orders],
+                dormitory=dormitories.pop(),
+                skip_group=True,
+                mode="free",
+                num_of_shippers=1,
+                max_weight=1000.0,
+            ).get_delivery()
+            return SortOrderResponse(orders=deliveries[0])
 
 
 START_TIME = time.time()

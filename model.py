@@ -28,6 +28,15 @@ class OrderSchema(BaseModel):
         from_attributes = True  # Enables ORM serialization
 
 
+class SortOrderSchema(BaseModel):
+    """Schema to serialize sort Order information for API response"""
+
+    id: str
+    room: str
+    building: str
+    dormitory: str
+
+
 class GroupOrdersRequest(BaseModel):
     maxWeight: Optional[float] = Field(default=None, gt=0)
     dormitory: Literal["A", "B"]
@@ -38,3 +47,11 @@ class GroupOrdersRequest(BaseModel):
 class GroupOrdersResponse(BaseModel):
     deliveries: List[List[OrderSchema]]
     delayed: List[OrderSchema]
+
+
+class SortOrderRequest(BaseModel):
+    orders: List[SortOrderSchema]
+
+
+class SortOrderResponse(BaseModel):
+    orders: List[SortOrderSchema]

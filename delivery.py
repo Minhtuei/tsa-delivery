@@ -205,7 +205,13 @@ class CreateDeliveriesTest:
 
 class CreateDeliveries:
     def __init__(
-        self, orders, dormitory, max_weight=20.0, num_of_shippers=1, mode="balanced"
+        self,
+        orders,
+        dormitory,
+        max_weight=20.0,
+        num_of_shippers=1,
+        mode="balanced",
+        skip_group=False,
     ):
         self.orders = orders
         self.dormitory = dormitory
@@ -213,12 +219,14 @@ class CreateDeliveries:
         self.num_of_shippers = num_of_shippers
         self.mode = mode
 
-        self.grouped_orders_by_weight = {}
+        self.grouped_orders_by_weight = orders if skip_group else {}
         self.delay_orders = {}
         self.sorted_orders_by_TSP = []
         self.map_box_distance = {}
 
-        self.group_by_weight()
+        if not skip_group:
+            self.group_by_weight()
+
         self.sort_orders_by_TSP()
 
     def get_start_location(self, dormitory):
