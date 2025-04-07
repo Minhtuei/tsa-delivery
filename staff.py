@@ -1,19 +1,23 @@
-class Staff:
-    def __init__(self, staff_id, status):
-        self.staff_id = staff_id
-        self.status = status
+from enum import Enum
+
+from sqlalchemy import select
+from sqlmodel import Field, Session, SQLModel
+
+
+class StaffStatus(str, Enum):
+    AVAILABLE = "AVAILABLE"
+    BUSY = "BUSY"
+    OFFLINE = "OFFLINE"
+
+
+class Staff(SQLModel, table=True):
+    __tablename__ = "Staff"
+    staffId: str = Field(primary_key=True, default=None)
+    status: StaffStatus
 
     @classmethod
-    def from_db_row(cls, row):
-        # Map dữ liệu từ DB row vào đối tượng Staff
-        return cls(staff_id=row[0], status=row[1])
-
-    @staticmethod
-    def get_total_available_staff(db) -> int:
-        conn = db.get_connection()
-        cur = conn.cursor()
-        query = """SELECT COUNT(*) FROM "Staff" WHERE "status" = 'AVAILABLE'"""
-        cur.execute(query)
-        total_available_staff = cur.fetchone()[0]
-        db.close_connection(conn, cur)
-        return total_available_staff
+    def get_total_available_staff(cls, session: Session) -> int:
+        """Retrieve total number of available staff."""
+        statement = select(cls).where(cls.status == StaffStatus.AVAILABLE)
+        result = session.exec(statement).all()
+        return len(result)
