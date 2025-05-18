@@ -12,12 +12,12 @@ class TSPSolver:
         self.map_box_distance = map_box_distance
         self.distance_matrix = self.create_distance_matrix()
 
-    def get_distance(self, order1, order2, alpha=1.0, beta=100.0):
+    def get_distance(self, order1, order2, alpha=1.0, beta=1.0):
         """Tính khoảng cách giữa 2 điểm"""
         from_building = order1["building"]
         to_building = order2["building"]
         if from_building != to_building:
-            distance = distance = next(
+            distance = next(
                 (
                     d
                     for d in self.map_box_distance
@@ -26,6 +26,7 @@ class TSPSolver:
                 None,
             )
             horizontal_distance = distance["distance"] if distance else 0.0
+            print(horizontal_distance)
             vertical_distance = (
                 abs(int(order1["room"][0]) + int(order2["room"][0])) * alpha
             )

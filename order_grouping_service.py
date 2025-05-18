@@ -18,6 +18,8 @@ class OrderGroupingServiceTest:
         ]
         self.max_weight = max_weight
         self.map_box_distance = {}
+        with open("mapbox_distance.json") as f:
+            self.map_box_distance = json.load(f)
         # self.load_orders(new_orders, nums_of_order)
         # self.group_by_dormitory()
         # self.group_by_time_slot()
@@ -25,8 +27,6 @@ class OrderGroupingServiceTest:
         # self.sort_orders_by_TSP()
 
     def load_orders(self, new_orders=False, nums_of_order=10):
-        with open("mapbox_distance.json") as f:
-            self.map_box_distance = json.load(f)
         if new_orders:
             self.orders = generate_orders(nums_of_order)
         else:
@@ -228,6 +228,8 @@ class OrderGroupingService:
         self.delay_orders = {}
         self.sorted_orders_by_TSP = []
         self.map_box_distance = {}
+        with open("mapbox_distance.json") as f:
+            self.map_box_distance = json.load(f)
 
         if not skip_group:
             self.group_by_weight()
