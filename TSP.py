@@ -26,7 +26,6 @@ class TSPSolver:
                 None,
             )
             horizontal_distance = distance["distance"] if distance else 0.0
-            print(horizontal_distance)
             vertical_distance = (
                 abs(int(order1["room"][0]) + int(order2["room"][0])) * alpha
             )

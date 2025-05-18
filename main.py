@@ -2,7 +2,7 @@ import csv
 import json
 import os
 
-from delivery import OrderGroupingServiceTest
+from order_grouping_service import OrderGroupingServiceTest
 
 nums_of_orders = [5, 10, 30, 50, 70, 100, 200, 500, 1000]
 
@@ -96,7 +96,7 @@ def test_precise():
         )
 
         for run_index in range(1, 11):  # Run 10 times
-            for i in range(1, 5):  # Số đơn từ 1 đến 11
+            for i in range(1, 13):  # Số đơn từ 1 đến 11
                 # Đọc dữ liệu đã lưu JSON
                 file_path = (
                     f"data/precise_{run_index}/grouped_orders_by_timeslot_{i}.json"
@@ -111,10 +111,10 @@ def test_precise():
 
                 # Gán dữ liệu đã load vào và test
                 (
-                    tsa_time,
-                    tsa_cost,
                     held_karp_time,
                     held_karp_cost,
+                    tsa_time,
+                    tsa_cost,
                 ) = delivery.test_precise(grouped_data)
 
                 # Ghi kết quả vào file CSV
