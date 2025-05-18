@@ -15,7 +15,7 @@ class UserRole(str, Enum):
     ADMIN = "ADMIN"
 
 
-class Staff(SQLModel, table=True):
+class StaffRepository(SQLModel, table=True):
     __tablename__ = "User"
     id: str = Field(primary_key=True, default=None)
     status: UserStatus

@@ -1,4 +1,5 @@
 import heapq
+import random
 
 from ortools.constraint_solver import pywrapcp, routing_enums_pb2
 
@@ -93,11 +94,11 @@ class TSPSolver:
 
         return best_cost, best_path
 
-    # def get_sorted_orders_by_TSP(self):
-    #     """Trả về danh sách đơn hàng theo thứ tự tối ưu"""
-    #     best_cost, best_path = self.tsp_branch_and_bound_dp()
-    #     print(best_cost)
-    #     return [ self.orders[i] for i in best_path[1:]], best_cost
+    def get_sorted_orders_by_TSP_hk(self):
+        """Trả về danh sách đơn hàng theo thứ tự tối ưu"""
+        best_cost, best_path = self.tsp_branch_and_bound_dp()
+        print(best_cost)
+        return [self.orders[i] for i in best_path[1:]], best_cost
 
     def tsp_ortool(self):
         data = {"distance_matrix": self.distance_matrix, "num_shippers": 1, "depot": 0}
@@ -124,9 +125,25 @@ class TSPSolver:
             path.append(manager.IndexToNode(index))
             index = solution.Value(routing.NextVar(index))
         total_cost = solution.ObjectiveValue()
-        print(total_cost)
         return [self.orders[i] for i in path[1:]], total_cost
 
     def get_sorted_orders_by_TSP(self):
         """Trả về danh sách đơn hàng theo thứ tự tối ưu"""
         return self.tsp_ortool()
+
+    def get_random_order_and_cost(self):
+        n = len(self.orders)
+
+        # Vị trí 0 là điểm xuất phát, ta random các điểm còn lại
+        indices = list(range(1, n))
+        random.shuffle(indices)
+        route = [0] + indices + [0]  # quay về điểm xuất phát
+
+        # Tính chi phí theo distance matrix
+        cost = 0
+        for i in range(len(route) - 1):
+            cost += self.distance_matrix[route[i]][route[i + 1]]
+
+        # Trả về danh sách đơn hàng sắp xếp lại (bỏ start_location khi return trip)
+        sorted_orders = [self.orders[i] for i in route[1:-1]]
+        return sorted_orders, cost

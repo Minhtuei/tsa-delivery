@@ -4,6 +4,8 @@ from typing import List, Optional
 
 from sqlmodel import Field, Session, SQLModel, select
 
+from model import OrderSchema
+
 
 # Define Enum for OrderStatus
 class OrderStatus(str, Enum):
@@ -13,10 +15,11 @@ class OrderStatus(str, Enum):
     DELIVERED = "DELIVERED"
     CANCELED = "CANCELED"
     IN_TRANSPORT = "IN_TRANSPORT"
+    RECEIVED_EXTERNAL = "RECEIVED_EXTERNAL"
 
 
 # Define Order model
-class Order(SQLModel, table=True):
+class OrderRepository(SQLModel, table=True):
     __tablename__ = "Order"
 
     id: str = Field(primary_key=True, index=True)
@@ -40,11 +43,13 @@ class Order(SQLModel, table=True):
     @classmethod
     def get_orders_by_delivery_date(
         cls, session: Session, timeslot: str, dormitory: str
-    ) -> List["Order"]:
-        """Retrieve orders by timeslot & dormitory, filtering only 'ACCEPTED' orders."""
+    ) -> List[OrderSchema]:
+        """Retrieve orders by timeslot & dormitory, filtering only 'RECEIVED_EXTERNAL' orders."""
+        print(timeslot)
         statement = select(cls).where(
             cls.deliveryDate == timeslot,
             cls.dormitory == dormitory,
-            cls.latestStatus == OrderStatus.ACCEPTED,
+            cls.latestStatus == OrderStatus.RECEIVED_EXTERNAL,
+            cls.shipperId.is_(None),
         )
         return session.exec(statement).all()

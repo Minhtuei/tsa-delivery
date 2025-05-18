@@ -6,15 +6,15 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session
 
 from db import db
-from delivery import CreateDeliveries
 from model import (
     GroupOrdersRequest,
     GroupOrdersResponse,
     SortOrderRequest,
     SortOrderResponse,
 )
-from order import Order
-from staff import Staff
+from order import OrderRepository
+from order_grouping_service import OrderGroupingService
+from staff import StaffRepository
 
 
 class App:
@@ -41,7 +41,7 @@ class App:
         ) -> GroupOrdersResponse:
             try:
                 # Fetch orders from DB
-                orders = Order.get_orders_by_delivery_date(
+                orders = OrderRepository.get_orders_by_delivery_date(
                     session, request.timeslot, request.dormitory
                 )
                 if not orders:
@@ -59,7 +59,7 @@ class App:
                 default_max_weight = request.maxWeight or 20.0
                 default_mode = request.mode or "balanced"
 
-                create_deliveries_config = {
+                order_grouping_service_config = {
                     "orders": orders_dict,
                     "dormitory": request.dormitory,
                     "max_weight": default_max_weight,
@@ -68,12 +68,12 @@ class App:
 
                 if default_mode == "balanced":
                     # Get num of available shipper
-                    create_deliveries_config[
+                    order_grouping_service_config[
                         "num_of_shippers"
-                    ] = Staff.get_total_available_staff(session)
+                    ] = StaffRepository.get_total_available_staff(session)
 
-                deliveries, delay_orders = CreateDeliveries(
-                    **create_deliveries_config
+                deliveries, delay_orders = OrderGroupingService(
+                    **order_grouping_service_config
                 ).get_delivery()
 
                 return GroupOrdersResponse(
@@ -103,7 +103,7 @@ class App:
                     },
                 )
 
-            deliveries, _ = CreateDeliveries(
+            deliveries, _ = OrderGroupingService(
                 orders=[orders],
                 dormitory=dormitories.pop(),
                 skip_group=True,
